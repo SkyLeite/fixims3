@@ -23,8 +23,8 @@ extra-source-files:
 
 common shared
   ghc-options:
-    -Wall -Wincomplete-record-updates -Wincomplete-uni-patterns
-    -Wmissing-deriving-strategies -Wunused-foralls -Wunused-foralls
+    -Wall -Werror=incomplete-record-updates -Werror=incomplete-uni-patterns
+    -Wunused-foralls -Wunused-foralls -Werror=missing-home-modules
     -fprint-explicit-foralls -fprint-explicit-kinds
 
   mixins:
@@ -33,7 +33,9 @@ common shared
     relude
 
   default-extensions:
+    NoMonomorphismRestriction
     NoStarIsType
+    AllowAmbiguousTypes
     BangPatterns
     ConstraintKinds
     DataKinds
@@ -73,8 +75,7 @@ common shared
     TypeFamilies
     TypeOperators
     ViewPatterns
-    NoMonomorphismRestriction
-    AllowAmbiguousTypes
+    NamedFieldPuns
 
   build-depends:
     , aeson
@@ -92,6 +93,8 @@ common shared
     , with-utf8
     , lens
     , generic-lens
+    , pathtype
+    , deepseq
 
   hs-source-dirs:     src
   default-language:   Haskell2010
@@ -99,3 +102,8 @@ common shared
 executable haskell-template
   import:  shared
   main-is: Main.hs
+  other-modules:
+    Sims3
+    Sims3.Install
+    Sims3.Modding
+    Sims3.Patches.Hardware

@@ -32,28 +32,27 @@
           packages = {
             # Add source or Hackage overrides here
             # (Local packages are added automatically)
-            /*
-            aeson.source = "1.5.0.0" # Hackage version
-            shower.source = inputs.shower; # Flake input
+            /* aeson.source = "1.5.0.0" # Hackage version
+               shower.source = inputs.shower; # Flake input
             */
+            lens.source = "5.2.2";
+            generic-lens.source = "2.2.2.0";
+            pathtype.source = "0.8.1.2";
           };
 
           # Add your package overrides here
           settings = {
-            /*
-            haskell-template = {
-              haddock = false;
-            };
-            aeson = {
-              check = false;
-            };
+            /* haskell-template = {
+                 haddock = false;
+               };
+               aeson = {
+                 check = false;
+               };
             */
           };
 
           # Development shell configuration
-          devShell = {
-            hlsCheck.enable = false;
-          };
+          devShell = { hlsCheck.enable = false; };
 
           # What should haskell-flake add to flake outputs?
           autoWire = [ "packages" "apps" "checks" ]; # Wire all but the devShell
@@ -73,10 +72,7 @@
           # We use fourmolu
           programs.ormolu.package = pkgs.haskellPackages.fourmolu;
           settings.formatter.ormolu = {
-            options = [
-              "--ghc-opt"
-              "-XImportQualifiedPost"
-            ];
+            options = [ "--ghc-opt" "-XImportQualifiedPost" ];
           };
         };
 

@@ -25,6 +25,7 @@ common shared
   ghc-options:
     -Wall -Werror=incomplete-record-updates -Werror=incomplete-uni-patterns
     -Wunused-foralls -Wunused-foralls -Werror=missing-home-modules
+    -Werror=missing-fields
     -fprint-explicit-foralls -fprint-explicit-kinds
 
   mixins:
@@ -107,3 +108,5 @@ executable haskell-template
     Sims3.Install
     Sims3.Modding
     Sims3.Patches.Hardware
+    Sims3.Types
+    Sims3.IO

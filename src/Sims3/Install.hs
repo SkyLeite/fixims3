@@ -1,75 +1,57 @@
-module Sims3.Install (Install, Sims3.Install.find, graphicsRules, Sims3.Install.readFile, Sims3.Install.writeFile, Sims3.Install.overwriteFile) where
+module Sims3.Install
+  ( Install,
+    Sims3.Install.find,
+    graphicsRules,
+  )
+where
 
-import Data.Generics.Product
 import Sims3.Modding as Modding
-import System.Path as Path (AbsDir, AbsFile, RelFile, relDir, relFile, takeDirectory, takeFileName, (</>))
+import Sims3.Types
+import System.Path as Path (AbsDir, RelFile, relDir, relFile, takeDirName, (</>))
 import System.Path.Directory (doesFileExist)
 import System.Path.Directory qualified as Path
-import System.Path.IO as Path.IO (hClose, hGetContents, hPutStr, openFile, openTempFile, writeFile)
-
-data Install = Install
-  { path :: Path.AbsDir,
-    moddingStatus :: ModdingStatus
-  }
-  deriving (Generic, Show)
-
-newtype ModdingStatus = Enabled Modding.Info | Disabled
 
 -- Internal
 
 isSims3Install :: Path.AbsDir -> IO Bool
 isSims3Install installPath = do
-  foundFiles <- mapM (\filePath -> doesFileExist (installPath </> filePath)) requiredFiles
+  foundFiles <- mapM (\filePath -> doesFileExist (installPath Path.</> filePath)) requiredFiles
   pure $ length foundFiles == length requiredFiles
   where
     requiredFiles :: [Path.RelFile]
-    requiredFiles = [relFile "Game/Bin/Sims3Launcher.exe"]
+    requiredFiles = [Path.relFile "Game/Bin/Sims3Launcher.exe"]
+
+isDataDir :: Path.AbsDir -> IO Bool
+isDataDir dataPath = do
+  hasVersionFile <- Path.doesFileExist (dataPath Path.</> Path.relFile "Version.tag")
+  return $ hasVersionFile && isNameCorrect
+  where
+    isNameCorrect = case Path.takeDirName dataPath of
+      Just dirName -> dirName == Path.relDir "The Sims 3"
+      Nothing -> False
 
 -- Public
 
-find :: Path.AbsDir -> IO (Maybe Install)
-find installPath = do
+find :: Path.AbsDir -> Path.AbsDir -> IO (Maybe Install)
+find installPath dataPath = do
   isInstall <- isSims3Install installPath
+  isData <- isDataDir dataPath
 
-  if isInstall
-    then
-      pure $
-        Just
-          Install
-            { path = installPath,
-              isModEnabled = False
-            }
+  if isInstall && isData
+    then do
+      let initialInstall =
+            Install
+              { path = installPath,
+                moddingStatus = Disabled,
+                dataPath = dataPath
+              }
+
+      moddingStatus <- Modding.mkInfo initialInstall
+      pure $ Just (initialInstall {moddingStatus = moddingStatus})
     else pure Nothing
-
-getInstallFilePath :: Install -> Path.RelFile -> Path.AbsFile
-getInstallFilePath install path =
-  getField @"path" install </> path
-
-readFile :: Install -> Path.RelFile -> IO [Text]
-readFile install path = do
-  handle <- Path.IO.openFile (getInstallFilePath install path) ReadMode
-  contents <- Path.IO.hGetContents handle
-  evaluateWHNF (rnf contents)
-  Path.IO.hClose handle
-  return . lines . toText $ contents
-
-writeFile :: Install -> Path.RelFile -> [Text] -> IO ()
-writeFile install path =
-  Path.IO.writeFile (getInstallFilePath install path) . toString . unlines
-
-overwriteFile :: Install -> Path.RelFile -> ([Text] -> [Text]) -> IO ()
-overwriteFile install path fn = do
-  oldContent <- Sims3.Install.readFile install path
-  (tempFile, handle) <- Path.IO.openTempFile (Path.takeDirectory destination) (Path.takeFileName destination)
-  hPutStr handle . toString . unlines . fn $ oldContent
-  hClose handle
-  Path.removeFile destination
-  Path.renameFile tempFile destination
-  where
-    destination = getInstallFilePath install path
 
 graphicsRules :: Path.RelFile
 graphicsRules =
-  relDir "Game"
-    </> relDir "Bin"
-    </> relFile "GraphicsRules.sgr"
+  Path.relDir "Game"
+    Path.</> Path.relDir "Bin"
+    Path.</> Path.relFile "GraphicsRules.sgr"
